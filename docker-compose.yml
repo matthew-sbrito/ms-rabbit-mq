@@ -29,7 +29,7 @@ services:
       - "5433:5432"
 
   sales-db:
-    build: ./sales-db
+    build: ./ms-rabbit-mq-sales-db
     container_name: sales-db
     networks:
       - sales-network
@@ -58,7 +58,7 @@ services:
       - "15672:15672"
 
   auth-api:
-    build: ./auth-api
+    build: ./ms-rabbit-mq-auth-api
     container_name: auth-api
     
     depends_on:
@@ -77,7 +77,7 @@ services:
       - "8080:8080"
 
   product-api:
-    build: ./product-api
+    build: ./ms-rabbit-mq-products-api
     container_name: product-api
     depends_on:
       - product-db
@@ -109,7 +109,7 @@ services:
       - "8081:8081"
 
   sales-api:
-    build: ./sales-api
+    build: ./ms-rabbit-mq-sales-api
     container_name: sales-api
     depends_on:
       - sales-db
