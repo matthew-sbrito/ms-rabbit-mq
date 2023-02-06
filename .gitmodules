@@ -1,0 +1,9 @@
+[submodule "ms-rabbit-mq-products-api"]
+	path = ms-rabbit-mq-products-api
+	url = https://github.com/matthew-sbrito/ms-rabbit-mq-products-api
+[submodule "ms-rabbit-mq-sales-api"]
+	path = ms-rabbit-mq-sales-api
+	url = https://github.com/matthew-sbrito/ms-rabbit-mq-sales-api
+[submodule "ms-rabbit-mq-auth-api"]
+	path = ms-rabbit-mq-auth-api
+	url = https://github.com/matthew-sbrito/ms-rabbit-mq-auth-api
