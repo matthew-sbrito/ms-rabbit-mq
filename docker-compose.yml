@@ -1,0 +1,143 @@
+version: "3"
+
+services:
+
+  auth-db:
+    image: postgres:11
+    container_name: auth-db
+    restart: always
+    networks:
+      - sales-network
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: auth-db
+    ports:
+      - "5432:5432"
+
+  product-db:
+    image: postgres:11
+    container_name: product-db
+    restart: always
+    networks:
+      - sales-network
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: product-db
+    ports:
+      - "5433:5432"
+
+  sales-db:
+    build: ./sales-db
+    container_name: sales-db
+    networks:
+      - sales-network
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+      MONGO_INITDB_DATABASE: sales-db
+      MONGO_REPLICA_HOST: sales-db
+      MONGO_REPLICA_PORT: 27018
+    ports:
+      - "27018:27018"
+      - "28018:28017"
+
+  sales-rabbit:
+    image: rabbitmq:3-management
+    container_name: sales-rabbit
+    hostname: sales-rabbit
+    networks:
+      - sales-network
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "25676:25676"
+      - "15672:15672"
+
+  auth-api:
+    build: ./auth-api
+    container_name: auth-api
+    
+    depends_on:
+      - auth-db
+    networks:
+      - sales-network
+    environment:
+      PORT: "8080"
+      DATABASE_USER: "admin"
+      DATABASE_PASSWORD: "123456"
+      DATABASE_HOST: "auth-db"
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: "auth-db"
+      DATABASE_URL: "postgres://admin:123456@auth-db:5432/auth-db"
+    ports:
+      - "8080:8080"
+
+  product-api:
+    build: ./product-api
+    container_name: product-api
+    depends_on:
+      - product-db
+      - sales-rabbit
+    networks:
+      - sales-network
+    environment:
+      PORT: 8081
+      DATABASE_USER: admin
+      DATABASE_PASSWORD: 123456
+      DATABASE_HOST: product-db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: product-db
+      DATABASE_URL: postgres://admin:123456@product-db:5432/product-db
+      AUTH_HOST: auth-api
+      AUTH_PORT: 8080
+      SALES_HOST: sales-api
+      SALES_PORT: 8082
+      RABBIT_MQ_USER: guest
+      RABBIT_MQ_PASSWORD: guest
+      RABBIT_MQ_HOST: sales-rabbit
+      RABBIT_MQ_PORT: 5672
+      PRODUCT_TOPIC: product.topic
+      PRODUCT_STOCK_UPDATE_QUEUE: product-stock-update.queue
+      PRODUCT_STOCK_UPDATE_ROUTING_KEY: product-stock-update.routingKey
+      SALES_CONFIRMATION_QUEUE: sales-confirmation.queue
+      SALES_CONFIRMATION_ROUTING_KEY: sales-confirmation.routingKey
+    ports:
+      - "8081:8081"
+
+  sales-api:
+    build: ./sales-api
+    container_name: sales-api
+    depends_on:
+      - sales-db
+      - sales-rabbit
+    networks:
+      - sales-network
+    environment:
+      PORT: 8082
+      DATABASE_USER: admin
+      DATABASE_PASSWORD: 123456
+      DATABASE_HOST: sales-db
+      DATABASE_PORT: 27018
+      DATABASE_NAME: sales-db
+      DATABASE_URL: mongodb://admin:123456@sales-db:27018/sales-db?authSource=admin
+      AUTH_HOST: auth-api
+      AUTH_PORT: 8080
+      RABBIT_MQ_USER: guest
+      RABBIT_MQ_PASSWORD: guest
+      RABBIT_MQ_HOST: sales-rabbit
+      RABBIT_MQ_PORT: 5672
+      PRODUCT_TOPIC: product.topic
+      PRODUCT_STOCK_UPDATE_QUEUE: product-stock-update.queue
+      PRODUCT_STOCK_UPDATE_ROUTING_KEY: product-stock-update.routingKey
+      SALES_CONFIRMATION_QUEUE: sales-confirmation.queue
+      SALES_CONFIRMATION_ROUTING_KEY: sales-confirmation.routingKey
+    ports:
+      - "8082:8082"
+
+networks:
+  sales-network:
+    driver: bridge
